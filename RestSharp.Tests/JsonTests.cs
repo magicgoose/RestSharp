@@ -32,6 +32,16 @@ namespace RestSharp.Tests
 
 		private const string GuidString = "AC1FC4BC-087A-4242-B8EE-C53EBE9887A5";
 
+        [Fact]
+        public void Can_Deserialize_Select_Tokens()
+        {
+            var data = File.ReadAllText(Path.Combine("SampleData", "jsonarray.txt"));
+            var response = new RestResponse { Content = data };
+            var json = new JsonDeserializer();
+            var output = json.Deserialize<StatusComplexList>(response);
+            Assert.Equal(4, output.Count);
+        }
+
 		[Fact]
 		public void Can_Deserialize_4sq_Json_With_Root_Element_Specified()
 		{
@@ -113,6 +123,20 @@ namespace RestSharp.Tests
 
 			var output = json.Deserialize<SOUser>(new RestResponse { Content = doc });
 			Assert.Equal("John Sheehan", output.DisplayName);
+		}
+
+		[Fact]
+		public void Can_Deserialize_To_Dictionary_String_Object() {
+			var doc = File.ReadAllText(Path.Combine("SampleData", "jsondictionary.txt"));
+
+			var json = new JsonDeserializer();
+
+			var output = json.Deserialize<Dictionary<string, object>>(new RestResponse() { Content = doc });
+
+			Assert.Equal(output.Keys.Count, 3);
+
+			var firstKeysVal = output.FirstOrDefault().Value;
+			Assert.IsAssignableFrom<System.Collections.IDictionary>(firstKeysVal);
 		}
 
 		[Fact]

@@ -14,11 +14,11 @@
 //   limitations under the License. 
 #endregion
 
-#if FRAMEWORK
+#if FRAMEWORK || PocketPC
 using System;
 using System.Net;
 
-#if !MONOTOUCH && !MONODROID
+#if !MONOTOUCH && !MONODROID && !PocketPC
 using System.Web;
 #endif
 
@@ -94,7 +94,11 @@ namespace RestSharp
 		/// <returns></returns>
 		public HttpResponse AsGet(string httpMethod)
 		{
+#if PocketPC
+			return GetStyleMethodInternal(httpMethod.ToUpper());
+#else
 			return GetStyleMethodInternal(httpMethod.ToUpperInvariant());
+#endif
 		}
 
 		/// <summary>
@@ -104,7 +108,11 @@ namespace RestSharp
 		/// <returns></returns>
 		public HttpResponse AsPost(string httpMethod)
 		{
+#if PocketPC
+			return PostPutInternal(httpMethod.ToUpper());
+#else
 			return PostPutInternal(httpMethod.ToUpperInvariant());
+#endif
 		}
 
 		private HttpResponse GetStyleMethodInternal(string method)
@@ -141,11 +149,27 @@ namespace RestSharp
 			_restrictedHeaderActions.Add("User-Agent", (r, v) => r.UserAgent = v);
 		}
 
+        private void ExtractErrorResponse(HttpResponse httpResponse, Exception ex)
+		{
+			var webException = ex as WebException;
+
+            if (webException != null && webException.Status == WebExceptionStatus.Timeout) 
+			{
+                httpResponse.ResponseStatus = ResponseStatus.TimedOut;
+                httpResponse.ErrorMessage = ex.Message;
+                httpResponse.ErrorException = webException;
+			    return;
+			}
+    
+            httpResponse.ErrorMessage = ex.Message;
+            httpResponse.ErrorException = ex;
+            httpResponse.ResponseStatus = ResponseStatus.Error;
+        }
+
 		private HttpResponse GetResponse(HttpWebRequest request)
 		{
-			var response = new HttpResponse();
-			response.ResponseStatus = ResponseStatus.None;
-
+            var response = new HttpResponse { ResponseStatus = ResponseStatus.None };
+            
 			try
 			{
 				var webResponse = GetRawResponse(request);
@@ -153,9 +177,7 @@ namespace RestSharp
 			}
 			catch (Exception ex)
 			{
-				response.ErrorMessage = ex.Message;
-				response.ErrorException = ex;
-				response.ResponseStatus = ResponseStatus.Error;
+                ExtractErrorResponse(response, ex);
 			}
 
 			return response;
@@ -217,7 +239,10 @@ namespace RestSharp
 		private HttpWebRequest ConfigureWebRequest(string method, Uri url)
 		{
 			var webRequest = (HttpWebRequest)WebRequest.Create(url);
+#if !PocketPC
 			webRequest.UseDefaultCredentials = UseDefaultCredentials;
+#endif
+			webRequest.PreAuthenticate = PreAuthenticate;
 			ServicePointManager.Expect100Continue = false;
 
 			AppendHeaders(webRequest);
@@ -232,12 +257,12 @@ namespace RestSharp
 			}
 
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.None;
-
+#if FRAMEWORK
 			if(ClientCertificates != null)
 			{
 				webRequest.ClientCertificates.AddRange(ClientCertificates);
 			}
-
+#endif
 			if(UserAgent.HasValue())
 			{
 				webRequest.UserAgent = UserAgent;
