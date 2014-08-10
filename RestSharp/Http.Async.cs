@@ -372,82 +372,84 @@ namespace RestSharp
 #endif
 		}
 
-		// TODO: Try to merge the shared parts between ConfigureWebRequest and ConfigureAsyncWebRequest (quite a bit of code
-		// TODO: duplication at the moment).
-		private HttpWebRequest ConfigureAsyncWebRequest(string method, Uri url)
-		{
+        // TODO: Try to merge the shared parts between ConfigureWebRequest and ConfigureAsyncWebRequest (quite a bit of code
+        // TODO: duplication at the moment).
+        private HttpWebRequest ConfigureAsyncWebRequest(string method, Uri url)
+        {
 #if SILVERLIGHT
-			WebRequest.RegisterPrefix("http://", WebRequestCreator.ClientHttp);
-			WebRequest.RegisterPrefix("https://", WebRequestCreator.ClientHttp);
+            WebRequest.RegisterPrefix("http://", WebRequestCreator.ClientHttp);
+            WebRequest.RegisterPrefix("https://", WebRequestCreator.ClientHttp);
 #endif
-			var webRequest = (HttpWebRequest)WebRequest.Create(url);
+            var webRequest = (HttpWebRequest)WebRequest.Create(url);
+            webRequest.AllowWriteStreamBuffering = false;
 #if !PocketPC
-			webRequest.UseDefaultCredentials = UseDefaultCredentials;
+            webRequest.UseDefaultCredentials = UseDefaultCredentials;
 #endif
 
 #if !WINDOWS_PHONE && !SILVERLIGHT
-			webRequest.PreAuthenticate = PreAuthenticate;
+            webRequest.PreAuthenticate = PreAuthenticate;
 #endif
-			AppendHeaders(webRequest);
-			AppendCookies(webRequest);
+            AppendHeaders(webRequest);
+            AppendCookies(webRequest);
 
-			webRequest.Method = method;
+            webRequest.Method = method;
 
-			// make sure Content-Length header is always sent since default is -1
+            // make sure Content-Length header is always sent since default is -1
 #if !WINDOWS_PHONE && !PocketPC
-			// WP7 doesn't as of Beta doesn't support a way to set this value either directly
-			// or indirectly
-			if (!HasFiles && !AlwaysMultipartFormData)
-			{
-				webRequest.ContentLength = 0;
-			}
+            // WP7 doesn't as of Beta doesn't support a way to set this value either directly
+            // or indirectly
+            if (!HasFiles && !AlwaysMultipartFormData)
+            {
+                webRequest.ContentLength = 0;
+            }
 #endif
 
-			if (Credentials != null)
-			{
-				webRequest.Credentials = Credentials;
-			}
+            if (Credentials != null)
+            {
+                webRequest.Credentials = Credentials;
+            }
 
 #if !SILVERLIGHT
-			if (UserAgent.HasValue())
-			{
-				webRequest.UserAgent = UserAgent;
-			}
+            if (UserAgent.HasValue())
+            {
+                webRequest.UserAgent = UserAgent;
+            }
 #endif
 
 #if FRAMEWORK
-			if (ClientCertificates != null)
-			{
-				webRequest.ClientCertificates.AddRange(ClientCertificates);
-			}
+            if (ClientCertificates != null)
+            {
+                webRequest.ClientCertificates.AddRange(ClientCertificates);
+            }
 
-			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.None;
-			ServicePointManager.Expect100Continue = false;
+            webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.None;
+            ServicePointManager.Expect100Continue = false;
 
-			if (Timeout != 0)
-			{
-				webRequest.Timeout = Timeout;
-			}
+            if (Timeout != 0)
+            {
+                webRequest.Timeout = Timeout;
+            }
 
-			if (ReadWriteTimeout != 0)
-			{
-				webRequest.ReadWriteTimeout = ReadWriteTimeout;
-			}
+            if (ReadWriteTimeout != 0)
+            {
+                webRequest.ReadWriteTimeout = ReadWriteTimeout;
+            }
 
-			if (Proxy != null)
-			{
-				webRequest.Proxy = Proxy;
-			}
+            if (Proxy != null)
+            {
+                webRequest.Proxy = Proxy;
+            }
 
-			if (FollowRedirects && MaxRedirects.HasValue)
-			{
-				webRequest.MaximumAutomaticRedirections = MaxRedirects.Value;
-			}
+            if (FollowRedirects && MaxRedirects.HasValue)
+            {
+                webRequest.MaximumAutomaticRedirections = MaxRedirects.Value;
+            }
 #endif
 
 #if !SILVERLIGHT
-			webRequest.AllowAutoRedirect = FollowRedirects;
+            webRequest.AllowAutoRedirect = FollowRedirects;
 #endif
+
 			return webRequest;
 		}
 
